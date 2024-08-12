@@ -31,4 +31,13 @@ const roomSchema = new Schema({
   },
 });
 
+roomSchema.pre("save", function (next) {
+  const defaultDeleteMessages = [];
+  this.members.forEach((member) => {
+    defaultDeleteMessages.push({ user_id: member, delete_at: Date.now() });
+  });
+  this.delete_messsage = defaultDeleteMessages;
+  next();
+});
+
 module.exports = model("Room", roomSchema);
