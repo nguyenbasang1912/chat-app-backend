@@ -26,8 +26,26 @@ const renewTokens = asyncHandler(async (req, res) => {
   }).json(res);
 });
 
+const getUsers = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: "Users retrieved successfully",
+    status: 200,
+    data: await UserService.getUsers(req.body),
+  }).json(res);
+});
+
+const searchUsers = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: "Users retrieved successfully",
+    status: 200,
+    data: await UserService.searchUser(req.query),
+  }).json(res);
+});
+
 module.exports = {
   login,
   register,
   renewTokens,
+  getUsers,
+  searchUsers,
 };

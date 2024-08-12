@@ -80,7 +80,7 @@ const register = async ({ username, password, fullname }) => {
   };
 };
 
-const renewTokens = async ({refreshToken}) => {
+const renewTokens = async ({ refreshToken }) => {
   if (!refreshToken) {
     const err = new Error("Please provide a valid refresh token");
     err.status = 401;
@@ -94,7 +94,7 @@ const renewTokens = async ({refreshToken}) => {
       err.status = 401;
       throw err;
     }
-    
+
     const user = await User.findById(decode.user_id);
 
     if (!user) {
@@ -119,8 +119,54 @@ const renewTokens = async ({refreshToken}) => {
   }
 };
 
+const searchUser = async ({ keyword, page = 1, limit = 10 }) => {
+  if (!keyword) {
+    const err = new Error("Please provide a keyword");
+    err.status = 400;
+    throw err;
+  }
+
+  const skip = (page - 1) * limit;
+  const totalPages = await User.countDocuments({
+    fullname: new RegExp(keyword, "i"),
+  });
+
+  const users = await User.find({
+    fullname: new RegExp(keyword, "i"),
+  })
+    .skip(skip)
+    .limit(limit)
+    .select("username fullname");
+
+  return {
+    users,
+    page: {
+      currentPage: page,
+      totalPages: Math.ceil(totalPages / limit),
+      hasNextPage: page * limit < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  };
+};
+
+const getUsers = async ({ userIds }) => {
+  if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+    const err = new Error("Please provide a valid array of user IDs");
+    err.status = 400;
+    throw err;
+  }
+
+  const users = await User.find({
+    _id: { $in: userIds },
+  }).select("username fullname");
+
+  return users;
+};
+
 module.exports = {
   login,
   register,
   renewTokens,
+  searchUser,
+  getUsers,
 };
