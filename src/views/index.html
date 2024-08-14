@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/socket.io/socket.io.js"></script>
+  <title>Chat App</title>
+</head>
+
+<body>
+  <form id="login-form">
+    <input type="text" placeholder="username">
+    <input type="text" placeholder="password">
+    <button type="submit">Login</button>
+  </form>
+
+  <div style="flex-direction: row; display: flex;">
+    <button id="socket">
+      Connect socket server
+    </button>
+    <button id="trigger">
+      Trigger socket
+    </button>
+    <button id="online-users">
+      Get online users
+    </button>
+  </div>
+
+  <select id="list">
+    <option>Chọn user</option>
+  </select>
+
+  <br>
+  <label for="online">Online users but not send message yet</label>
+
+  <ul id="online">
+
+  </ul>
+
+  <script>
+    let socket = null
+    let loginResponse = null
+
+    const btnSocket = document.getElementById("socket")
+    const btnTrigger = document.getElementById("trigger")
+    const btnOnlineUsers = document.getElementById("online-users")
+    const listOnlineUser = document.getElementById("list")
+
+    btnSocket.addEventListener("click", () => {
+      socket = io({
+        query: {
+          userId: loginResponse.user.userId
+        }
+      })
+    })
+
+    btnTrigger.addEventListener("click", () => {
+      if (socket) {
+        socket.on('online users', async (users) => {
+          console.log('Online users: ', users)
+
+          listOnlineUser.innerHTML = ''
+          const option = document.createElement('option')
+          option.innerText = 'Chọn user'
+
+          users?.forEach((user) => {
+            const option = document.createElement('option')
+            option.value = user
+            option.innerText = user.toString() === loginResponse.user.userId.toString() ? 'me' : 'User ID: ' + user
+            listOnlineUser.appendChild(option)
+          })
+
+          // fetch api 
+          const response = await fetch('https://localhost:8000/api/room/get-rooms-by-user',
+            {
+              method: 'POST',
+              headers: {
+                authorization: 'Bearer ' + loginResponse.tokens.accessToken
+              }
+            }
+          )
+
+          const rooms = await response.json()
+          console.log('room: ', rooms)
+        })
+      }
+    })
+
+    btnOnlineUsers.addEventListener("click", () => {
+      if (socket) {
+        socket.emit('online users')
+      }
+    })
+
+    const loginForm = document.getElementById("login-form")
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault()
+      const username = e.target[0].value
+      const password = e.target[1].value
+
+      const response = await fetch('http://localhost:8000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      })
+
+      loginResponse = (await response.json()).data
+    })
+  </script>
+</body>
+
+</html>

@@ -10,6 +10,15 @@ const getRoomByMembers = asyncHandler(async (req, res) => {
   }).json(res);
 });
 
+const getRoomsByUserId = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: "Get room by user id successfully",
+    status: 200,
+    data: await RoomService.getRoomsByUserId({ userId: req.user.user_id }),
+  }).json(res);
+});
+
 module.exports = {
   getRoomByMembers,
+  getRoomsByUserId
 };

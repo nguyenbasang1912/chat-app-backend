@@ -46,6 +46,7 @@ const login = async ({ username, password }) => {
 
   return {
     user: {
+      userId: user._id,
       username: user.username,
       fullname: user.fullname,
     },
@@ -75,6 +76,7 @@ const register = async ({ username, password, fullname }) => {
   });
 
   return {
+    userId: newUser._id,
     username: newUser.username,
     fullname: newUser.fullname,
   };
@@ -163,10 +165,33 @@ const getUsers = async ({ userIds }) => {
   return users;
 };
 
+const getAllUsers = async ({ page = 1, limit = 10, userId }) => {
+  const skip = (page - 1) * limit;
+  const totalPages = await User.countDocuments({});
+
+  const users = await User.find({
+    _id: { $ne: userId },
+  })
+    .skip(skip)
+    .limit(limit)
+    .select("username fullname");
+
+  return {
+    users,
+    page: {
+      currentPage: page,
+      totalPages: Math.ceil(totalPages / limit),
+      hasNextPage: page * limit < totalPages,
+      hasPreviousPage: page > 1,
+    },
+  };
+};
+
 module.exports = {
   login,
   register,
   renewTokens,
   searchUser,
   getUsers,
+  getAllUsers,
 };

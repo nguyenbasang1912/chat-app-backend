@@ -42,10 +42,22 @@ const searchUsers = asyncHandler(async (req, res) => {
   }).json(res);
 });
 
+const getAllUsers = asyncHandler(async (req, res) => {
+  new SuccessResponse({
+    message: "All users retrieved successfully",
+    status: 200,
+    data: await UserService.getAllUsers({
+      ...req.query,
+      userId: req.user.user_id,
+    }),
+  }).json(res);
+});
+
 module.exports = {
   login,
   register,
   renewTokens,
   getUsers,
   searchUsers,
+  getAllUsers,
 };
