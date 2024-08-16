@@ -7,6 +7,7 @@ const notFound = (req, res, next) => {
 };
 
 const errorHandler = (err, req, res, next) => {
+  console.log(err);
   return res.status(err.status || 500).json({
     message: err.message,
     error: process.env.ENV === "dev" ? err.stack : {}, // Only include error details in development mode.

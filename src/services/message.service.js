@@ -1,26 +1,21 @@
 const Message = require("../models/messsage.model");
 const Room = require("../models/room.model");
 
-const sendMessage = async ({
-  userId,
-  roomId,
-  content,
-  isSendNotification = false,
-}) => {
+const sendMessage = async ({ userId, roomId, content }, onSuccess) => {
   const newMessage = await Message.create({
     sender: userId,
     content,
     room_id: roomId,
     is_delete: false,
+  }).then((doc) => {
+    return doc.populate("sender", "fullname username");
   });
 
-  if (isSendNotification) {
-    // Send notification to room members
-  }
+  onSuccess(newMessage.sender);
 
   return {
     _id: newMessage._id,
-    sender: newMessage.sender,
+    sender: newMessage.sender._id,
     content: newMessage.content,
     createdAt: newMessage.createdAt,
     is_delete: newMessage.is_delete,
@@ -49,6 +44,7 @@ const getMessagesByRoomId = async ({
   userId,
   page = 1,
   limit = 20,
+  additionalSkip = 0,
 }) => {
   const room = await Room.findOne({ _id: roomId }).lean();
   const deleteAt = room.delete_messsage.find((user) => {
@@ -61,15 +57,16 @@ const getMessagesByRoomId = async ({
     throw err;
   }
 
-  const countMessage = await Message.countDocuments({
-    room_id: roomId,
-    createdAt: {
-      $gte: new Date(deleteAt),
-    },
-  });
+  const countMessage =
+    (await Message.countDocuments({
+      room_id: roomId,
+      createdAt: {
+        $gte: new Date(deleteAt),
+      },
+    })) - additionalSkip;
 
   const maxPages = Math.floor(countMessage / limit) || 1;
-  const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit + parseInt(additionalSkip);
 
   const messages = await Message.find({
     room_id: roomId,
@@ -77,7 +74,7 @@ const getMessagesByRoomId = async ({
       $gte: new Date(deleteAt),
     },
   })
-    .select("")
+    .select("sender content createdAt is_delete room_id")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit)

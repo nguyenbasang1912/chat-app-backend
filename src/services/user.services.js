@@ -1,7 +1,8 @@
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
-
+const RoomService = require("../services/room.service");
+const { io } = require("../socket/socket");
 const genTokens = (payload) => {
   const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "1h",
@@ -49,6 +50,7 @@ const login = async ({ username, password }) => {
       userId: user._id,
       username: user.username,
       fullname: user.fullname,
+      fcmToken: user.fcm_token,
     },
     tokens: genTokens(payloadToken),
   };
@@ -160,7 +162,7 @@ const getUsers = async ({ userIds }) => {
 
   const users = await User.find({
     _id: { $in: userIds },
-  }).select("username fullname");
+  }).select("username fullname fcm_token");
 
   return users;
 };
@@ -174,7 +176,7 @@ const getAllUsers = async ({ page = 1, limit = 10, userId }) => {
   })
     .skip(skip)
     .limit(limit)
-    .select("username fullname");
+    .select("username fullname fcm_token");
 
   return {
     users,
@@ -187,6 +189,33 @@ const getAllUsers = async ({ page = 1, limit = 10, userId }) => {
   };
 };
 
+const updateFcm = async ({ userId, fcmToken }) => {
+  const user = await User.findOneAndUpdate(
+    {
+      _id: userId,
+    },
+    {
+      fcm_token: fcmToken,
+    },
+    {
+      new: true,
+    }
+  );
+
+  const rooms = await RoomService.getRoomsByMembers([userId]);
+
+  io.to(rooms.map((room) => room._id.toString())).emit(
+    "partner update fcm",
+    user.fcm_token
+  );
+
+  return user.fcm_token;
+};
+
+const logout = async ({ userId }) => {
+  return await updateFcm({ userId, fcmToken: "" });
+};
+
 module.exports = {
   login,
   register,
@@ -194,4 +223,6 @@ module.exports = {
   searchUser,
   getUsers,
   getAllUsers,
+  updateFcm,
+  logout,
 };

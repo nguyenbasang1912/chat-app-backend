@@ -53,6 +53,28 @@ const getAllUsers = asyncHandler(async (req, res) => {
   }).json(res);
 });
 
+const updateFcm = asyncHandler(async (req, res) => {
+  const { user_id } = req.user;
+
+  new SuccessResponse({
+    message: "FCM token updated successfully",
+    status: 200,
+    data: await UserService.updateFcm({
+      userId: user_id,
+      fcmToken: req.body.fcmToken,
+    }),
+  }).json(res);
+});
+
+const logout = asyncHandler(async (req, res) => {
+  const { userId } = req.user;
+  new SuccessResponse({
+    message: "Logout successful",
+    status: 200,
+    data: await UserService.logout(userId),
+  });
+});
+
 module.exports = {
   login,
   register,
@@ -60,4 +82,6 @@ module.exports = {
   getUsers,
   searchUsers,
   getAllUsers,
+  updateFcm,
+  logout,
 };

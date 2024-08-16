@@ -15,6 +15,10 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
+  fcm_token: {
+    type: String,
+    default: "",
+  },
 });
 
 userSchema.pre("save", function (next) {

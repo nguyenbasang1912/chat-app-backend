@@ -9,5 +9,7 @@ router.post("/renew-token", UserController.renewTokens);
 router.get("/search", UserController.searchUsers);
 router.post("/get-users", UserController.getUsers);
 router.get("/get-all-users", verifyUser, UserController.getAllUsers);
+router.post("/update-fcm", verifyUser, UserController.updateFcm);
+router.post("/logout", verifyUser, UserController.logout);
 
 module.exports = router;
