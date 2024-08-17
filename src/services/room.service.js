@@ -8,15 +8,21 @@ const createRoom = async ({ name, host, members }) => {
     members,
   });
 
-  const newRoom = await Room.create(payload).then((doc) => {
-    return doc.populate("members", "fullname username fcm_token");
-  });
+  const newRoom = (
+    await Room.create(payload).then((doc) => {
+      return doc.populate("members", "fullname username fcm_token");
+    })
+  ).toObject();
 
-  return {
+  const room = {
     _id: newRoom._id,
     is_group: newRoom.is_group,
     members: newRoom.members,
   };
+
+  console.log("createRoom", room);
+
+  return room;
 };
 
 const getRoomByMembers = async ({ members }) => {
@@ -27,9 +33,10 @@ const getRoomByMembers = async ({ members }) => {
     .lean();
 
   if (!room) {
-    console.log("create new room");
     return await createRoom({ members: sortedMembers });
   }
+
+  console.log("room: ", room);
 
   return room;
 };

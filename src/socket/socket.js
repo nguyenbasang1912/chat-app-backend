@@ -26,12 +26,15 @@ io.on("connection", (socket) => {
   socket.on("join room", async (userIds) => {
     let room = await RoomService.getRoomByMembers({ members: userIds });
 
+
     room.members = room.members.map((mem) => {
       return {
         ...mem,
         isOnline: onlineUsers.has(mem._id.toString()),
       };
     });
+
+    console.log("room", room);
 
     socket.join(room._id.toString());
     socket.emit("get room", room);
