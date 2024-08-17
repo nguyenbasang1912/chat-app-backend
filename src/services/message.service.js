@@ -11,9 +11,7 @@ const sendMessage = async ({ userId, roomId, content }, onSuccess) => {
     return doc.populate("sender", "fullname username");
   });
 
-  onSuccess(newMessage.sender);
-
-  return {
+  const message = {
     _id: newMessage._id,
     sender: newMessage.sender._id,
     content: newMessage.content,
@@ -21,7 +19,12 @@ const sendMessage = async ({ userId, roomId, content }, onSuccess) => {
     is_delete: newMessage.is_delete,
     room_id: newMessage.room_id,
   };
+
+  onSuccess(newMessage.sender);
+
+  return message;
 };
+
 
 const deleteMessage = async ({ messageId }) => {
   const message = await Message.findOneAndUpdate(

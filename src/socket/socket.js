@@ -1,7 +1,7 @@
-const express = require('express');
+const express = require("express");
 const { createServer } = require("http");
 const { sendNotification } = require("../services/notification.service");
-const MessageService = require("../services/message.service");
+const { sendMessage } = require("../services/message.service");
 const RoomService = require("../services/room.service");
 const { Server } = require("socket.io");
 
@@ -46,7 +46,7 @@ io.on("connection", (socket) => {
     async (roomId, content, userId, partnerId, partnerFcmToken, myFcmToken) => {
       let sender = {};
 
-      const message = await MessageService.sendMessage(
+      const message = await sendMessage(
         {
           userId,
           roomId,
@@ -67,7 +67,11 @@ io.on("connection", (socket) => {
           return socketId.toString() === onlineUsers.get(partnerId);
         });
 
-        if (partnerFcmToken && !partnerIsInRoom) {
+        if (partnerIsInRoom) {
+          return;
+        }
+
+        if (partnerFcmToken) {
           // send notification
           console.log("send noti");
           const msg = {
@@ -75,9 +79,9 @@ io.on("connection", (socket) => {
               type: "message",
               title: sender.fullname,
               body: message.content,
-              userId: userId.toString(),
+              userId: userId,
               fcm: myFcmToken,
-              id: roomId,
+              roomId: roomId,
             },
             token: partnerFcmToken,
           };
@@ -85,13 +89,14 @@ io.on("connection", (socket) => {
           sendNotification(msg);
         }
       } catch (error) {
+        console.log("error", error);
         return;
       }
     }
   );
 
   socket.on("disconnect", async () => {
-    console.log("user disconnected: ", socket.id);
+    console.log("user disconnected: ", socket.handshake.query.userId);
 
     onlineUsers.delete(socket.handshake.query.userId);
     io.emit("online users", [...onlineUsers.values()]);
@@ -110,5 +115,5 @@ module.exports = {
   server,
   io,
   onlineUsers,
-  app
+  app,
 };

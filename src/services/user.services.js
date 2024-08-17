@@ -3,9 +3,12 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 const RoomService = require("../services/room.service");
 const { io } = require("../socket/socket");
+
+const usersLogin = new Map();
+
 const genTokens = (payload) => {
   const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "1h",
+    expiresIn: '1h',
   });
 
   const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
@@ -27,6 +30,12 @@ const login = async ({ username, password }) => {
 
   const user = await User.findOne({ username });
 
+  if (usersLogin.has(user._id.toString())) {
+    const err = new Error("User is logged in");
+    err.status = 400;
+    throw err;
+  }
+
   if (!user) {
     const err = new Error("Invalid credentials");
     err.status = 401;
@@ -44,6 +53,8 @@ const login = async ({ username, password }) => {
   const payloadToken = {
     user_id: user._id,
   };
+
+  usersLogin.set(user._id.toString(), true);
 
   return {
     user: {
@@ -213,6 +224,7 @@ const updateFcm = async ({ userId, fcmToken }) => {
 };
 
 const logout = async ({ userId }) => {
+  usersLogin.delete(userId.toString());
   return await updateFcm({ userId, fcmToken: "" });
 };
 

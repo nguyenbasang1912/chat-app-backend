@@ -67,12 +67,12 @@ const updateFcm = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-  const { userId } = req.user;
+  const { user_id } = req.user;
   new SuccessResponse({
     message: "Logout successful",
     status: 200,
-    data: await UserService.logout(userId),
-  });
+    data: await UserService.logout({ userId: user_id }),
+  }).json(res);
 });
 
 module.exports = {
